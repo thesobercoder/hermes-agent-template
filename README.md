@@ -44,6 +44,7 @@ For the intended first deploy, configure these Railway Variables:
 
 ```env
 OPENROUTER_API_KEY=sk-or-...
+LLM_MODEL=moonshotai/kimi-k2.6
 TELEGRAM_BOT_TOKEN=123456:...
 TELEGRAM_ALLOWED_USERS=123456789
 TELEGRAM_HOME_CHANNEL=123456789
@@ -58,6 +59,8 @@ HERMES_YOLO_MODE=true
 
 The seeded Hermes config starts with OpenRouter-compatible defaults. `TELEGRAM_ALLOWED_USERS` is the comma-separated list of Telegram users allowed to use the agent, and `TELEGRAM_HOME_CHANNEL` is used for cron/default outbound Telegram delivery.
 
+`LLM_MODEL` is a first-run bootstrap value so Hermes can start working immediately. After `/data/.hermes/config.yaml` exists on the mounted volume, the persisted Hermes config carries the selected model.
+
 ### Railway Variables Reference
 
 Add these directly in Railway Variables as needed.
@@ -65,6 +68,7 @@ Add these directly in Railway Variables as needed.
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `OPENROUTER_API_KEY` | Yes | OpenRouter API key for the default template path. |
+| `LLM_MODEL` | First run | Model slug Hermes should use on first boot, for example `moonshotai/kimi-k2.6` with OpenRouter. |
 | `TELEGRAM_BOT_TOKEN` | Yes | Telegram bot token from BotFather. |
 | `TELEGRAM_ALLOWED_USERS` | Yes | Comma-separated Telegram user IDs allowed to use the agent. |
 | `TELEGRAM_HOME_CHANNEL` | Yes | Default Telegram chat/channel for cron and outbound delivery. |
@@ -84,8 +88,6 @@ Add these directly in Railway Variables as needed.
 | `HERMES_INFERENCE_PROVIDER` | Optional | Provider override, such as `openrouter`, `anthropic`, or `openai-codex`. |
 | `HERMES_YOLO_MODE` | Optional | Set to `true` in Railway Variables to bypass approval prompts. |
 
-The previous local variable example used `LLM_MODEL`, but upstream Hermes treats `config.yaml` as the model source of truth. Change the model in `/data/.hermes/config.yaml` or via Hermes config commands rather than setting `LLM_MODEL`.
-
 ## Deploying to Railway
 
 1. Click the Deploy on Railway button.
@@ -99,6 +101,7 @@ The previous local variable example used `LLM_MODEL`, but upstream Hermes treats
 docker build -t hermes-agent .
 docker run --rm -it \
   -e OPENROUTER_API_KEY=sk-or-... \
+  -e LLM_MODEL=moonshotai/kimi-k2.6 \
   -e TELEGRAM_BOT_TOKEN=123456:... \
   -e TELEGRAM_ALLOWED_USERS=123456789 \
   -v hermes-data:/data \
