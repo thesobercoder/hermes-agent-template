@@ -16,7 +16,7 @@ tini
     └── hermes gateway
 ```
 
-`start.sh` only prepares `/data/.hermes`, seeds `config.yaml` from the installed Hermes example when needed, removes a stale gateway PID file, and then `exec`s the command. There is no custom Python admin server or reverse proxy in this template.
+`start.sh` only prepares `/data/.hermes`, seeds `config.yaml` from the installed Hermes example when needed, removes a stale gateway PID file, and then `exec`s the command.
 
 ## Runtime Tooling
 
