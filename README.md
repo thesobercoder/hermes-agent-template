@@ -38,7 +38,9 @@ To bump Hermes, update `HERMES_REF` to a release tag or another git ref publishe
 
 ## Environment Variables
 
-Configure Hermes through Railway Variables. Container-level environment variables are inherited directly by `hermes gateway`.
+Configure Hermes through Railway Variables. On every container boot, `start.sh` rewrites `/data/.hermes/.env` from the current container environment before starting `hermes gateway`, excluding Railway platform metadata variables that start with `RAILWAY_`.
+
+Railway Variables remain the source of truth. Do not manage `/data/.hermes/.env` manually; it is generated at runtime and overwritten on restart.
 
 For the intended first deploy, configure these Railway Variables:
 
@@ -105,6 +107,7 @@ docker run --rm -it \
   -e LLM_MODEL=moonshotai/kimi-k2.6 \
   -e TELEGRAM_BOT_TOKEN=123456:... \
   -e TELEGRAM_ALLOWED_USERS=123456789 \
+  -e TELEGRAM_HOME_CHANNEL=123456789 \
   -e GATEWAY_ALLOW_ALL_USERS=false \
   -v hermes-data:/data \
   hermes-agent
