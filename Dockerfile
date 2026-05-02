@@ -26,7 +26,7 @@ ENV PATH="${BUN_INSTALL}/bin:${PATH}"
 # runtime tools the agent can use for generated projects, MCP servers, and
 # shell workflows.
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends ca-certificates curl git tini unzip && \
+    apt-get install -y --no-install-recommends ca-certificates curl git tini unzip ffmpeg && \
     curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
     apt-get install -y --no-install-recommends nodejs && \
     npm install -g pnpm && \
