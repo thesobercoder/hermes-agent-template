@@ -1,109 +1,116 @@
 # Hermes Agent — Railway Template
 
-Deploy [Hermes Agent](https://github.com/NousResearch/hermes-agent) on [Railway](https://railway.app) with a web-based admin dashboard for configuration, gateway management, and user pairing.
+Deploy [Hermes Agent](https://github.com/NousResearch/hermes-agent) on [Railway](https://railway.app) as a direct `hermes gateway` container.
 
 [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/hermes-agent-ai?referralCode=QXdhdr&utm_medium=integration&utm_source=template&utm_campaign=generic)
 
-> Hermes Agent is an autonomous AI agent by [Nous Research](https://nousresearch.com/) that lives on your server, connects to your messaging channels (Telegram, Discord, Slack, etc.), and gets more capable the longer it runs.
+> Hermes Agent is an autonomous AI agent by [Nous Research](https://nousresearch.com/) that lives on your server, connects to your messaging channels, and gets more capable the longer it runs.
 
-<!-- TODO: Add dashboard screenshot -->
-<!-- ![Dashboard](docs/dashboard.png) -->
+## What This Runs
 
-## Features
+The container starts Hermes directly:
 
-- **Admin Dashboard** — dark-themed UI to configure providers, channels, tools, and manage the gateway
-- **One-Page Setup** — provider dropdown, checkbox-based channel/tool toggles — no config files to edit
-- **Gateway Management** — start, stop, restart the Hermes gateway from the browser
-- **Live Status** — stat cards for gateway state, uptime, model, and pending pairing requests
-- **Live Logs** — streaming gateway log viewer
-- **User Pairing** — approve or deny users who message your bot, revoke access anytime
-- **Basic Auth** — password-protected admin panel
-- **Reset Config** — one-click reset to start fresh
+```text
+tini
+└── /app/start.sh
+    └── hermes gateway
+```
 
-## Getting Started
+`start.sh` only prepares `/data/.hermes`, seeds `config.yaml` from the installed Hermes example when needed, removes a stale gateway PID file, and then `exec`s the command. There is no custom Python admin server or reverse proxy in this template.
 
-The easiest way to get started:
+## Runtime Tooling
 
-### 1. Get an LLM Provider Key (free)
+The image keeps the language runtimes Hermes and its tools may need:
 
-1. Register for free at [OpenRouter](https://openrouter.ai/)
-2. Create an API key from your [OpenRouter dashboard](https://openrouter.ai/keys)
-3. Pick a free model from the [model list sorted by price](https://openrouter.ai/models?order=pricing-low-to-high) (e.g. `google/gemma-3-1b-it:free`, `meta-llama/llama-3.1-8b-instruct:free`)
+- Python 3.12, pip, and uv from the base image
+- Node.js 22, npm, and pnpm
+- Bun
 
-### 2. Set Up a Telegram Bot (fastest channel)
+## Hermes Version
 
-Hermes Agent interacts entirely through messaging channels — there is no chat UI like ChatGPT. Telegram is the quickest to set up:
+The upstream Hermes revision is pinned in the Dockerfile:
 
-1. Open Telegram and message [@BotFather](https://t.me/BotFather)
-2. Send `/newbot`, follow the prompts, and copy the **Bot Token**
-3. Send a message to your new bot — it will appear as a pairing request in the admin dashboard
-4. To find your Telegram user ID, message [@userinfobot](https://t.me/userinfobot)
+```dockerfile
+ARG HERMES_REF=v2026.4.30
+```
 
-### 3. Deploy to Railway
-
-1. Click the **Deploy on Railway** button above
-2. Set the `ADMIN_PASSWORD` environment variable (or a random one will be generated and printed to deploy logs)
-3. Attach a **volume** mounted at `/data` (persists config across redeploys)
-4. Open your app URL — log in with username `admin` and your password
-
-### 4. Configure in the Admin Dashboard
-
-1. **LLM Provider** — select OpenRouter from the dropdown, paste your API key, enter the model name
-2. **Messaging Channel** — check Telegram, paste the Bot Token from BotFather
-3. Click **Save & Start** — the gateway will start and your bot goes live
-
-### 5. Start Chatting
-
-Message your Telegram bot. If you're a new user, a pairing request will appear in the admin dashboard under **Users** — click **Approve**, and you're in.
-
-<!-- TODO: Add Telegram chat screenshot -->
-<!-- ![Telegram Example](docs/telegram-example.png) -->
+To bump Hermes, update `HERMES_REF` to a release tag or another git ref published by [NousResearch/hermes-agent](https://github.com/NousResearch/hermes-agent).
 
 ## Environment Variables
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `PORT` | `8080` | Web server port (set automatically by Railway) |
-| `ADMIN_USERNAME` | `admin` | Basic auth username |
-| `ADMIN_PASSWORD` | *(auto-generated)* | Basic auth password — if unset, a random password is printed to logs |
+Configure Hermes through Railway Variables. Container-level environment variables are inherited directly by `hermes gateway`.
 
-All other configuration (LLM provider, model, channels, tools) is managed through the admin dashboard.
+For the intended first deploy, configure these Railway Variables:
 
-## Supported Providers
-
-OpenRouter, DeepSeek, DashScope, GLM / Z.AI, Kimi, MiniMax, HuggingFace
-
-## Supported Channels
-
-Telegram, Discord, Slack, WhatsApp, Email, Mattermost, Matrix
-
-## Supported Tool Integrations
-
-Parallel (search), Firecrawl (scraping), Tavily (search), FAL (image gen), Browserbase, GitHub, OpenAI Voice (Whisper/TTS), Honcho (memory)
-
-## Architecture
-
-```
-Railway Container
-├── Python Admin Server (Starlette + Uvicorn)
-│   ├── /            — Admin dashboard (Basic Auth)
-│   ├── /health      — Health check (no auth)
-│   └── /api/*       — Config, status, logs, gateway, pairing
-└── hermes gateway   — Managed as async subprocess
+```env
+OPENROUTER_API_KEY=sk-or-...
+TELEGRAM_BOT_TOKEN=123456:...
+TELEGRAM_ALLOWED_USERS=123456789
+TELEGRAM_HOME_CHANNEL=123456789
 ```
 
-The admin server runs on `$PORT` and manages the Hermes gateway as a child process. Config is stored in `/data/.hermes/.env` and `/data/.hermes/config.yaml`. Gateway stdout/stderr is captured into a ring buffer and streamed to the Logs panel.
+Useful optional variables:
+
+```env
+GITHUB_TOKEN=github_pat_...
+HERMES_YOLO_MODE=true
+```
+
+The seeded Hermes config starts with OpenRouter-compatible defaults. `TELEGRAM_ALLOWED_USERS` is the comma-separated list of Telegram users allowed to use the agent, and `TELEGRAM_HOME_CHANNEL` is used for cron/default outbound Telegram delivery.
+
+### Railway Variables Reference
+
+Add these directly in Railway Variables as needed.
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `OPENROUTER_API_KEY` | Yes | OpenRouter API key for the default template path. |
+| `TELEGRAM_BOT_TOKEN` | Yes | Telegram bot token from BotFather. |
+| `TELEGRAM_ALLOWED_USERS` | Yes | Comma-separated Telegram user IDs allowed to use the agent. |
+| `TELEGRAM_HOME_CHANNEL` | Yes | Default Telegram chat/channel for cron and outbound delivery. |
+| `GITHUB_TOKEN` | Optional | GitHub token for higher rate limits and GitHub tooling. |
+| `EXA_API_KEY` | Optional | Exa web search integration. |
+| `FIRECRAWL_API_KEY` | Optional | Firecrawl web scraping integration. |
+| `PARALLEL_API_KEY` | Optional | Parallel web search integration. |
+| `FAL_KEY` | Optional | FAL image generation integration. |
+| `HONCHO_API_KEY` | Optional | Honcho cross-session user modeling. |
+| `BROWSERBASE_API_KEY` | Optional | Browserbase browser automation. |
+| `BROWSERBASE_PROJECT_ID` | Optional | Browserbase project identifier. |
+| `GATEWAY_ALLOW_ALL_USERS` | Optional | Set to `true` to allow all users, or keep unset/false and use allowlists. |
+| `TERMINAL_ENV` | Optional | Terminal backend. Typical values: `local`, `docker`, `modal`, `ssh`. |
+| `TERMINAL_TIMEOUT` | Optional | Terminal command timeout in seconds. |
+| `OPENAI_API_KEY` | Optional | Direct OpenAI provider key if you customize Hermes away from the default OpenRouter path. |
+| `ANTHROPIC_API_KEY` | Optional | Direct Anthropic provider key if you customize Hermes away from the default OpenRouter path. |
+| `HERMES_INFERENCE_PROVIDER` | Optional | Provider override, such as `openrouter`, `anthropic`, or `openai-codex`. |
+| `HERMES_YOLO_MODE` | Optional | Set to `true` in Railway Variables to bypass approval prompts. |
+
+The previous local variable example used `LLM_MODEL`, but upstream Hermes treats `config.yaml` as the model source of truth. Change the model in `/data/.hermes/config.yaml` or via Hermes config commands rather than setting `LLM_MODEL`.
+
+## Deploying to Railway
+
+1. Click the Deploy on Railway button.
+2. Set your Hermes environment variables.
+3. Attach a volume mounted at `/data` so `/data/.hermes` survives redeploys.
+4. Deploy the service. It runs as a worker process, not as an HTTP web app.
 
 ## Running Locally
 
 ```bash
 docker build -t hermes-agent .
-docker run --rm -it -p 8080:8080 -e PORT=8080 -e ADMIN_PASSWORD=changeme -v hermes-data:/data hermes-agent
+docker run --rm -it \
+  -e OPENROUTER_API_KEY=sk-or-... \
+  -e TELEGRAM_BOT_TOKEN=123456:... \
+  -e TELEGRAM_ALLOWED_USERS=123456789 \
+  -v hermes-data:/data \
+  hermes-agent
 ```
 
-Open `http://localhost:8080` and log in with `admin` / `changeme`.
+To run another Hermes CLI command with the same image:
+
+```bash
+docker run --rm -it -v hermes-data:/data hermes-agent hermes --help
+```
 
 ## Credits
 
 - [Hermes Agent](https://github.com/NousResearch/hermes-agent) by [Nous Research](https://nousresearch.com/)
-- UI inspired by [OpenClaw](https://github.com/praveen-ks-2001/openclaw-railway) admin template

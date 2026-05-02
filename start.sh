@@ -1,10 +1,12 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
-# Mirror dashboard-ref-only's startup: create every directory hermes expects
-# and seed a default config.yaml if the volume is empty. Without these,
-# `hermes dashboard` endpoints that hit logs/, sessions/, cron/, etc. can fail
-# with opaque errors even though no auth is actually involved.
+if [ "$#" -eq 0 ]; then
+  set -- hermes gateway
+fi
+
+# Create every directory hermes expects and seed a default config.yaml if the
+# persistent volume is empty.
 mkdir -p /data/.hermes/cron /data/.hermes/sessions /data/.hermes/logs \
          /data/.hermes/memories /data/.hermes/skills /data/.hermes/pairing \
          /data/.hermes/hooks /data/.hermes/image_cache /data/.hermes/audio_cache \
@@ -13,8 +15,6 @@ mkdir -p /data/.hermes/cron /data/.hermes/sessions /data/.hermes/logs \
 if [ ! -f /data/.hermes/config.yaml ] && [ -f /opt/hermes-agent/cli-config.yaml.example ]; then
   cp /opt/hermes-agent/cli-config.yaml.example /data/.hermes/config.yaml
 fi
-
-[ ! -f /data/.hermes/.env ] && touch /data/.hermes/.env
 
 # Clear any stale gateway PID file left over from the previous container.
 # `hermes gateway` writes /data/.hermes/gateway.pid on start but does not
@@ -25,4 +25,4 @@ fi
 # container), so removing the file unconditionally is safe.
 rm -f /data/.hermes/gateway.pid
 
-exec python /app/server.py
+exec "$@"
