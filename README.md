@@ -48,6 +48,7 @@ LLM_MODEL=moonshotai/kimi-k2.6
 TELEGRAM_BOT_TOKEN=123456:...
 TELEGRAM_ALLOWED_USERS=123456789
 TELEGRAM_HOME_CHANNEL=123456789
+GATEWAY_ALLOW_ALL_USERS=false
 ```
 
 Useful optional variables:
@@ -80,7 +81,7 @@ Add these directly in Railway Variables as needed.
 | `HONCHO_API_KEY` | Optional | Honcho cross-session user modeling. |
 | `BROWSERBASE_API_KEY` | Optional | Browserbase browser automation. |
 | `BROWSERBASE_PROJECT_ID` | Optional | Browserbase project identifier. |
-| `GATEWAY_ALLOW_ALL_USERS` | Optional | Set to `true` to allow all users, or keep unset/false and use allowlists. |
+| `GATEWAY_ALLOW_ALL_USERS` | Yes | Security guidance: set to `false` and use `TELEGRAM_ALLOWED_USERS` as the allowlist. |
 | `TERMINAL_ENV` | Optional | Terminal backend. Typical values: `local`, `docker`, `modal`, `ssh`. |
 | `TERMINAL_TIMEOUT` | Optional | Terminal command timeout in seconds. |
 | `OPENAI_API_KEY` | Optional | Direct OpenAI provider key if you customize Hermes away from the default OpenRouter path. |
@@ -104,6 +105,7 @@ docker run --rm -it \
   -e LLM_MODEL=moonshotai/kimi-k2.6 \
   -e TELEGRAM_BOT_TOKEN=123456:... \
   -e TELEGRAM_ALLOWED_USERS=123456789 \
+  -e GATEWAY_ALLOW_ALL_USERS=false \
   -v hermes-data:/data \
   hermes-agent
 ```
