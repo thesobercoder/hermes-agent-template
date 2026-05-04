@@ -29,12 +29,10 @@ env_dir = os.path.dirname(env_path)
 name_re = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 
-def quote_dotenv(value: str) -> str:
-    value = value.replace("\\", "\\\\")
+def format_dotenv_value(value: str) -> str:
     value = value.replace("\n", "\\n")
     value = value.replace("\r", "\\r")
-    value = value.replace('"', '\\"')
-    return f'"{value}"'
+    return value
 
 
 fd, tmp_path = tempfile.mkstemp(prefix=".env.", dir=env_dir, text=True)
@@ -48,7 +46,7 @@ try:
                 continue
             if key.startswith("RAILWAY_"):
                 continue
-            fh.write(f"{key}={quote_dotenv(os.environ[key])}\n")
+            fh.write(f"{key}={format_dotenv_value(os.environ[key])}\n")
     os.replace(tmp_path, env_path)
 except Exception:
     try:
